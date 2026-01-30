@@ -116,7 +116,7 @@ O backtest indicou que a estratégia:
 - A estratégia gerou um desempenho superior ao ativo livre de risco, representado pelo CDI.
 - Superou os modelos unitários (A e B)
 
-![Performance do Modelo](assets/image.png)
+![Performance do Modelo](image.png)
 
 Os resultados sugerem que a seleção adaptativa entre modelos técnicos e informacionais contribui para a geração de alpha consistente.
 
