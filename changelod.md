@@ -19,3 +19,9 @@ Semana IV (11/12)
 Semana V(18/12)
 * Modelo A - Sebastian
 * Features Modelo A - Gabriel e Pedro
+
+29/01 [Semana x]
+
+* Relatório finalizado
+* Backtest finalizado
+* Projeto Entregue
