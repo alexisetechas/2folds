@@ -2,7 +2,7 @@
 
 Este repositório apresenta a implementação, backtest e análise da estratégia **2Folds**, um modelo quantitativo de investimento desenvolvido em Python.
 
-A estratégia combina **aprendizado de máquina por ensemble (XGBoost)** com **análise de sentimento financeiro (FinBERT)** e variáveis macroeconômicas, explorando ineficiências de mercado geradas pela interação entre estrutura técnica, fluxo informacional e comportamento dos agentes.
+A estratégia combina **modelagem estatística baseada em dados técnicos** com **análise de sentimento financeiro integrada a variáveis macroeconômicas**, explorando ineficiências de mercado que emergem da interação entre padrões de preço e fluxo informacional.
 
 ---
 
@@ -11,8 +11,8 @@ A estratégia combina **aprendizado de máquina por ensemble (XGBoost)** com **a
 2. [Hipótese de Investimento](#hipótese-de-investimento)
 3. [Metodologia e Modelagem](#metodologia-e-modelagem)
     - [Modelo A: Estrutura Técnica](#modelo-a-estrutura-técnica)
-    - [Modelo B: Sentimento e Macroeconomia](#modelo-b-sentimento-e-macroeconomia)
-    - [Fusão dos Modelos (2 Folds)](#fusão-dos-modelos-2-folds)
+    - [Modelo B: Sentimento Financeiro e Macroeconomia](#modelo-b-sentimento-financeiro-e-macroeconomia)
+    - [Seleção e Fusão dos Modelos (2Folds)](#seleção-e-fusão-dos-modelos-2folds)
 4. [Regras de Operação e Backtest](#regras-de-operação-e-backtest)
 5. [Resultados](#resultados)
 6. [Engenharia de Dados](#engenharia-de-dados)
@@ -28,75 +28,82 @@ A estratégia combina **aprendizado de máquina por ensemble (XGBoost)** com **a
 | **Universo** | Ibovespa |
 | **Frequência** | Semanal |
 | **Rebalanceamento** | Sexta-feira |
-| **Benchmark** | IBOV / CDI |
+| **Benchmark** | Ibovespa |
+| **Avaliação de Risco** | CDI (métrica comparativa) |
 | **Tecnologia** | Python (Pandas, XGBoost, HuggingFace, Scikit-learn) |
 
 ---
 
 ## Hipótese de Investimento
 
-A hipótese central do projeto é que **modelos puramente técnicos ou puramente informacionais capturam apenas parte da dinâmica do mercado**.
+A hipótese central do projeto é que **diferentes ativos e regimes de mercado respondem melhor a diferentes fontes de informação**.
 
-> A integração entre **modelos de Ensemble Learning baseados em dados técnicos** e **modelos de Análise de Sentimento e variáveis macroeconômicas**, quando combinados por um mecanismo adaptativo de ponderação, é capaz de gerar **alpha consistente acima do benchmark e do ativo livre de risco (CDI)**.
+> Modelos baseados exclusivamente em padrões técnicos ou exclusivamente em informações qualitativas tendem a falhar em determinados contextos. A seleção adaptativa entre um **modelo técnico** e um **modelo de sentimento macroeconômico**, com base no histórico de acertos, permite capturar alpha de forma mais robusta e consistente.
 
-O nome **2Folds** representa a dualidade estrutural do modelo:
-- Um *fold* focado em padrões estatísticos e recorrência técnica;
-- Um *fold* focado na entropia informacional do mercado (sentimento e macro).
+O 2Folds não força a combinação simultânea dos modelos, mas **escolhe dinamicamente aquele que apresenta melhor desempenho preditivo para cada ativo**.
 
 ---
 
 ## Metodologia e Modelagem
 
-A arquitetura do sistema é composta por **dois modelos independentes por ativo**, treinados separadamente e posteriormente combinados.
+A arquitetura do sistema é composta por **dois modelos independentes**, avaliados separadamente para cada ativo elegível após os filtros iniciais.
 
 ### Modelo A: Estrutura Técnica
 
-O **Modelo A** utiliza o algoritmo **XGBoost**, um método de ensemble baseado em árvores de decisão e otimização por gradiente de segunda ordem.
+O **Modelo A** é focado na recorrência estatística dos preços e utiliza **XGBoost**, um algoritmo de ensemble baseado em árvores de decisão e otimização por gradiente de segunda ordem.
 
 - **Features Técnicas:**
   - Retornos e volatilidade em múltiplas janelas
   - Indicadores técnicos (RSI, MACD, Bollinger Bands, ATR)
   - Estrutura de candles (corpo, sombras, ranges)
-- **Target:** retorno semanal do ativo
-- **Objetivo:** capturar padrões estatísticos persistentes e estruturas de momentum/reversão
+- **Target:** direção ou retorno semanal do ativo
+- **Objetivo:** capturar padrões técnicos persistentes, momentum e reversão à média
 
 ---
 
-### Modelo B: Sentimento e Macroeconomia
+### Modelo B: Sentimento Financeiro e Macroeconomia
 
-O **Modelo B** explora informações não estruturadas e variáveis exógenas ao preço.
+O **Modelo B** explora informações **não estruturadas** e variáveis **exógenas ao preço**, atuando sobre a entropia informacional do mercado.
 
-- **Análise de Sentimento:**
+- **Análise de Sentimento Financeiro:**
   - Uso do **FinBERT**, modelo Transformer treinado em linguagem financeira
   - Classificação de notícias em polaridades (positiva, neutra, negativa)
-- **Variáveis Macroeconômicas:**
-  - Taxa de juros (CDI)
-  - Indicadores de mercado e risco sistêmico
-- **Objetivo:** capturar mudanças de regime e choques informacionais não refletidos imediatamente nos preços
+- **Variáveis Macroeconômicas e de Mercado:**
+  - Indicadores agregados de risco e ambiente macro
+  - Medidas de stress e contexto econômico
+- **Objetivo:** capturar mudanças de regime e choques informacionais que ainda não foram totalmente incorporados aos preços
 
 ---
 
-### Fusão dos Modelos (2 Folds)
+## Seleção e Fusão dos Modelos (2Folds)
 
-As previsões dos dois modelos são combinadas por um mecanismo de ponderação dinâmica, formando o sinal final de decisão.
+Apesar do nome do projeto, **não há uso de *folds* no sentido estatístico**. Cada ativo é avaliado individualmente pelos dois modelos.
 
-- Cada *fold* gera um score normalizado por ativo
-- O sinal agregado define:
-  - Seleção dos ativos
-  - Direção e intensidade da exposição
-- A lógica de ensemble reduz ruído e aumenta robustez fora da amostra
+O processo ocorre da seguinte forma:
+
+- Após os filtros de **valor e liquidez**, cada ativo elegível é avaliado por:
+  - **Modelo A (Técnico)**
+  - **Modelo B (Sentimento/Macro)**
+- Cada modelo gera um **score preditivo**
+- Para cada ativo:
+  - O modelo com **melhor histórico de acertos** é selecionado
+  - O sinal é considerado válido apenas se o score ultrapassar um **threshold > 0.5**
+- O modelo vencedor define:
+  - A entrada do ativo
+  - A direção da exposição
+
+Essa lógica seletiva reduz ruído, evita overfitting estrutural e aumenta a robustez fora da amostra.
 
 ---
 
 ## Regras de Operação e Backtest
 
-Para garantir robustez estatística e replicabilidade:
-
-- **Frequência:** rebalanceamento semanal (sextas-feiras)
-- **Prevenção de Lookahead Bias:** uso exclusivo de dados disponíveis até o momento da decisão
+- **Frequência:** rebalanceamento semanal
+- **Prevenção de Lookahead Bias:** uso exclusivo de dados disponíveis até a data de decisão
 - **Custos de Transação:** considerados no resultado líquido
-- **Base de Comparação:** Ibovespa e CDI
-- **Janela de Análise:** conforme período disponível no dataset consolidado
+- **Benchmark:** Ibovespa
+- **Avaliação Complementar:** comparação com CDI para análise de prêmio de risco
+- **Período:** conforme disponibilidade do dataset consolidado
 
 ---
 
@@ -104,26 +111,27 @@ Para garantir robustez estatística e replicabilidade:
 
 O backtest indicou que a estratégia:
 
-- Superou o **Ibovespa** em retorno total e métricas ajustadas ao risco
-- Apresentou **Sharpe Ratio superior** ao benchmark
-- Gerou retorno acima do **CDI**, evidenciando criação de valor além do prêmio de risco da economia
+- Superou o **Ibovespa** em retorno total +16.05% (alpha)
+- Apresentou métricas superiores ajustadas ao risco (*Sharpe*: 1.16)
+- A estratégia gerou um desempenho superior ao ativo livre de risco, representado pelo CDI.
+- Superou os modelos unitários (A e B)
 
-Os resultados sugerem que a combinação entre estrutura técnica e informação qualitativa contribui para a geração de alpha consistente.
+![Performance do Modelo](assets/image.png)
+
+Os resultados sugerem que a seleção adaptativa entre modelos técnicos e informacionais contribui para a geração de alpha consistente.
 
 ---
 
 ## Engenharia de Dados
 
-A engenharia de dados foi um componente central do projeto.
-
 - **Fontes:**
-  - Yahoo Finance (preços)
-  - Bases públicas e agregadores de notícias financeiras
-  - Banco Central do Brasil (CDI)
+  - Yahoo Finance (histórico de cotações)
+  - Bases públicas e jornais de notícias financeiras
+  - Indicadores macroeconômicos públicos
 - **Processos:**
   - Limpeza e alinhamento temporal
   - Feature engineering técnico e textual
-  - Normalização e controle de *data leakage*
+  - Controle rigoroso de *data leakage*
 
 ---
 
